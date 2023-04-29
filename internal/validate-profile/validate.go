@@ -18,11 +18,11 @@ const realFaceConfidenceLevelPercent float32 = 80.0
 // Validates that only a single face appears in the image, and it isn't wearing sunglasses
 // Only jpeg, jpg and png are supported formats
 // Returns nil if processed successfully with no errors
-func (c *Client) ProcessImage(s3Bucket, s3FilePath string) error {
+func (c *Client) processImage(s3Bucket, s3FilePath string) error {
 	log.Debugf("Processing bucket: %s, file: %s", s3Bucket, s3FilePath)
 
 	if !validateFileExtension(s3FilePath) {
-		return fmt.Errorf("error: only jpeg, jpg and png image formats are supported")
+		return fmt.Errorf("only jpeg, jpg and png image formats are supported")
 	}
 
 	input := &rekognition.DetectFacesInput{
@@ -39,7 +39,7 @@ func (c *Client) ProcessImage(s3Bucket, s3FilePath string) error {
 
 	resp, err := getFaces(context.TODO(), c.client, input)
 	if err != nil {
-		return fmt.Errorf("error: calling getFaces: %v", err)
+		return fmt.Errorf("calling getFaces: %v", err)
 	}
 
 	if err = validateImage(resp.FaceDetails); err != nil {
@@ -69,18 +69,18 @@ func validateImage(faceDetails []types.FaceDetail) error {
 	facesDetected := len(faceDetails)
 	// ensure only 1 face appears in the image
 	if facesDetected != 1 {
-		return fmt.Errorf("error: number of faces found: %d. exactly 1 face needs to be detected", facesDetected)
+		return fmt.Errorf("number of faces found: %d. exactly 1 face needs to be detected", facesDetected)
 	}
 
 	for _, faceDetail := range faceDetails {
 		// check for sunglasses
 		if faceDetail.Sunglasses != nil && faceDetail.Sunglasses.Value && *faceDetail.Sunglasses.Confidence > sunGlassesConfidenceLevelPercent {
-			return fmt.Errorf("error: sunglasses detected with > %v%% confidence", sunGlassesConfidenceLevelPercent)
+			return fmt.Errorf("sunglasses detected")
 		}
 
 		// ensure we have a high degree of confidence that a face appears
 		if *faceDetail.Confidence < realFaceConfidenceLevelPercent {
-			return fmt.Errorf("error: less than %v%% condidence that a single face appears in this image", realFaceConfidenceLevelPercent)
+			return fmt.Errorf("less than %v%% condidence that a single face appears in this image", realFaceConfidenceLevelPercent)
 		}
 	}
 
