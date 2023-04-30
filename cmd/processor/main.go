@@ -11,12 +11,16 @@ import (
 	"github.com/michaelprice232/image-processor-api/internal/validate-profile"
 )
 
-const httpServerPort = ":3000"
+const (
+	httpServerPort    = ":3000"
+	successKafkaTopic = "success-validate-profile-image-v1"
+	failedKafkaTopic  = "failed-validate-profile-image-v1"
+)
 
 func main() {
 	setLogLevel()
 
-	client, err := validate_profile.NewClient()
+	client, err := validate_profile.NewClient(successKafkaTopic, failedKafkaTopic)
 	if err != nil {
 		log.Fatal(err)
 	}

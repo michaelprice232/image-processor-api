@@ -6,17 +6,36 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/rekognition"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 type Client struct {
-	client *rekognition.Client
+	rekognitionClient *rekognition.Client
+	kafkaProducer     *kafka.Producer
+	successKafkaTopic string
+	failedKafkaTopic  string
 }
 
-func NewClient() (*Client, error) {
+func NewClient(successTopic, failedTopic string) (*Client, error) {
+	// todo: read Kafka properties from envars
+	kafkaConfigMap := kafka.ConfigMap{
+		"bootstrap.servers": "localhost:9092",
+	}
+	kafkaProducer, err := kafka.NewProducer(&kafkaConfigMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Kafka Producer: %v", err)
+	}
+
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("failed to load SDK configuration: %v", err)
 	}
 
-	return &Client{client: rekognition.NewFromConfig(cfg)}, nil
+	return &Client{
+		rekognitionClient: rekognition.NewFromConfig(cfg),
+		kafkaProducer:     kafkaProducer,
+		successKafkaTopic: successTopic,
+		failedKafkaTopic:  failedTopic,
+	}, nil
 }

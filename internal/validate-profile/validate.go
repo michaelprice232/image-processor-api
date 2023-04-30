@@ -22,10 +22,6 @@ const realFaceConfidenceLevelPercent float32 = 80.0
 func (c *Client) processImage(s3Bucket, s3FilePath string) error {
 	log.Infof("Processing bucket: %s, file: %s", s3Bucket, s3FilePath)
 
-	if len(s3Bucket) == 0 || len(s3FilePath) == 0 {
-		return fmt.Errorf("processImage s3Bucket or s3FilePath parameters cannot be empty")
-	}
-
 	if !validateFileExtension(s3FilePath) {
 		return fmt.Errorf("only jpeg, jpg and png image formats are supported")
 	}
@@ -42,7 +38,7 @@ func (c *Client) processImage(s3Bucket, s3FilePath string) error {
 		},
 	}
 
-	resp, err := getFaces(context.TODO(), c.client, input)
+	resp, err := getFaces(context.TODO(), c.rekognitionClient, input)
 	if err != nil {
 		return fmt.Errorf("calling getFaces: %v", err)
 	}
