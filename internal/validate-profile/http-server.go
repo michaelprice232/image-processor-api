@@ -21,33 +21,28 @@ func (c *Client) HealthEndpoint(w http.ResponseWriter, _ *http.Request) {
 	_, _ = w.Write([]byte("OK"))
 }
 
-// ProcessHTTPRequest extracts the EventBridge event from the request payload and then calls processImage to validate
+// ProcessHTTPRequest extracts the EventBridge event from the request payload and then calls processImage to validate image
 func (c *Client) ProcessHTTPRequest(w http.ResponseWriter, r *http.Request) {
 	rawPayload, err := io.ReadAll(r.Body)
 	if err != nil || len(rawPayload) == 0 {
 		writeHTTPErrorResponse(fmt.Sprintf("error: unable to parse the request body: %v", err), 400, w)
-		//http.Error(w, fmt.Sprintf("error: unable to parse the request body: %v", err), 400)
-		//log.Errorf("error: unable to parse the request body: %v. Raw payload: %v", err, string(rawPayload))
 		return
 	}
 
 	event, err := s3ObjectCreatedSchema.UnmarshalEvent(rawPayload)
 	if err != nil {
 		writeHTTPErrorResponse(fmt.Sprintf("error: unable to unmarshal request body into AWSEvent event: %v", err), 400, w)
-		//http.Error(w, fmt.Sprintf("error: unable to unmarshal request body into AWSEvent event: %v", err), 400)
-		//log.Errorf("error: unable to unmarshal request body into AWSEvent event: %v: %v", err, string(rawPayload))
 		return
 	}
 
 	err = c.processImage(event.Detail.Bucket.Name, event.Detail.Object.Key)
 	if err != nil {
 		writeHTTPErrorResponse(fmt.Sprintf("error: processing event: %v", err), 400, w)
-		//http.Error(w, fmt.Sprintf("error: processing event: %v", err), 400)
-		//log.Errorf("error: processing event: %v. AWSEvent: %#v", err, event)
 		return
 	}
 }
 
+// writeHTTPErrorResponse writes an ErrorResponse to the http.ResponseWriter and sets the status code
 func writeHTTPErrorResponse(body string, code int, w http.ResponseWriter) {
 	resp := ErrorResponse{
 		Message: body,
@@ -55,13 +50,13 @@ func writeHTTPErrorResponse(body string, code int, w http.ResponseWriter) {
 	}
 	jsonResp, err := json.Marshal(resp)
 	if err != nil {
-		log.Errorf("Error marshalling ErrorResponse: %v", err)
+		log.Errorf("error marshalling ErrorResponse: %v", err)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	_, err = w.Write(jsonResp)
 	if err != nil {
-		log.Errorf("writing JSON error response: %v", err)
+		log.Errorf("error writing JSON error response: %v", err)
 	}
 	log.Debug(body)
 }

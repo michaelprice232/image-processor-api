@@ -11,15 +11,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Required confidence levels (%) when asserting a property in an image
 const sunGlassesConfidenceLevelPercent float32 = 80.0
 const realFaceConfidenceLevelPercent float32 = 80.0
 
-// ProcessImage uses AWS Rekognition to validate an image file
-// Validates that only a single face appears in the image, and it isn't wearing sunglasses
+// processImage uses AWS Rekognition to validate an image file
+// Validates that only a single face appears in the image, and the subject isn't wearing sunglasses
 // Only jpeg, jpg and png are supported formats
 // Returns nil if processed successfully with no errors
 func (c *Client) processImage(s3Bucket, s3FilePath string) error {
-	log.Debugf("Processing bucket: %s, file: %s", s3Bucket, s3FilePath)
+	log.Infof("Processing bucket: %s, file: %s", s3Bucket, s3FilePath)
+
+	if len(s3Bucket) == 0 || len(s3FilePath) == 0 {
+		return fmt.Errorf("processImage s3Bucket or s3FilePath parameters cannot be empty")
+	}
 
 	if !validateFileExtension(s3FilePath) {
 		return fmt.Errorf("only jpeg, jpg and png image formats are supported")
@@ -64,24 +69,23 @@ func validateFileExtension(s3FilePath string) bool {
 	return true
 }
 
-// validateImage validates that we have 1 face within the image which isn't wearing glasses
+// validateImage validates that we have 1 face within the image which isn't wearing glasses, within a certain degree of confidence
 func validateImage(faceDetails []types.FaceDetail) error {
 	facesDetected := len(faceDetails)
+
 	// ensure only 1 face appears in the image
 	if facesDetected != 1 {
 		return fmt.Errorf("number of faces found: %d. exactly 1 face needs to be detected", facesDetected)
 	}
 
-	for _, faceDetail := range faceDetails {
-		// check for sunglasses
-		if faceDetail.Sunglasses != nil && faceDetail.Sunglasses.Value && *faceDetail.Sunglasses.Confidence > sunGlassesConfidenceLevelPercent {
-			return fmt.Errorf("sunglasses detected")
-		}
+	// check the subject is not wearing sunglasses
+	if faceDetails[0].Sunglasses != nil && faceDetails[0].Sunglasses.Value && *faceDetails[0].Sunglasses.Confidence > sunGlassesConfidenceLevelPercent {
+		return fmt.Errorf("sunglasses detected")
+	}
 
-		// ensure we have a high degree of confidence that a face appears
-		if *faceDetail.Confidence < realFaceConfidenceLevelPercent {
-			return fmt.Errorf("less than %v%% condidence that a single face appears in this image", realFaceConfidenceLevelPercent)
-		}
+	// ensure we have a high degree of confidence that a face appears
+	if *faceDetails[0].Confidence < realFaceConfidenceLevelPercent {
+		return fmt.Errorf("less than %v%% condidence that a single face appears in this image", realFaceConfidenceLevelPercent)
 	}
 
 	return nil

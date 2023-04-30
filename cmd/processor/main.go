@@ -14,12 +14,7 @@ import (
 const httpServerPort = ":3000"
 
 func main() {
-	logLevelEnvar := os.Getenv("LOG_LEVEL")
-	level, err := log.ParseLevel(logLevelEnvar)
-	if err != nil || len(logLevelEnvar) == 0 {
-		log.SetLevel(log.ErrorLevel)
-	}
-	log.SetLevel(level)
+	setLogLevel()
 
 	client, err := validate_profile.NewClient()
 	if err != nil {
@@ -35,5 +30,14 @@ func main() {
 	r.Post("/validate", client.ProcessHTTPRequest)
 
 	log.Infof("Starting server on port: %s", httpServerPort)
-	_ = http.ListenAndServe(httpServerPort, r)
+	log.Fatal(http.ListenAndServe(httpServerPort, r))
+}
+
+func setLogLevel() {
+	logLevelEnvar := os.Getenv("LOG_LEVEL")
+	level, err := log.ParseLevel(logLevelEnvar)
+	if err != nil || len(logLevelEnvar) == 0 {
+		log.SetLevel(log.ErrorLevel)
+	}
+	log.SetLevel(level)
 }
