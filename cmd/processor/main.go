@@ -48,6 +48,7 @@ func setLogLevel() {
 	level, err := log.ParseLevel(logLevelEnvar)
 	if err != nil || len(logLevelEnvar) == 0 {
 		log.SetLevel(log.ErrorLevel)
+		return
 	}
 	log.SetLevel(level)
 }
