@@ -15,10 +15,10 @@ import (
 const sunGlassesConfidenceLevelPercent float32 = 80.0
 const realFaceConfidenceLevelPercent float32 = 80.0
 
-// processImage uses AWS Rekognition to validate an image file
-// Validates that only a single face appears in the image, and the subject isn't wearing sunglasses
-// Only jpeg, jpg and png are supported formats
-// Returns nil if processed successfully with no errors
+// processImage uses AWS Rekognition to validate an image file.
+// Validates that only a single face appears in the image, and the subject isn't wearing sunglasses.
+// Only jpeg, jpg and png are supported formats.
+// Returns nil if processed successfully with no errors.
 func (c *Client) processImage(s3Bucket, s3FilePath string) error {
 	log.Infof("Processing bucket: %s, file: %s", s3Bucket, s3FilePath)
 
@@ -50,7 +50,7 @@ func (c *Client) processImage(s3Bucket, s3FilePath string) error {
 	return nil
 }
 
-// validateFileExtension confirms we are processing a supported extension. Returns false if invalid
+// validateFileExtension confirms we are processing a supported extension. Returns false if invalid.
 func validateFileExtension(s3FilePath string) bool {
 	fileExtension := filepath.Ext(s3FilePath)
 	validExtension := map[string]bool{
@@ -65,7 +65,7 @@ func validateFileExtension(s3FilePath string) bool {
 	return true
 }
 
-// validateImage validates that we have 1 face within the image which isn't wearing glasses, within a certain degree of confidence
+// validateImage validates that we have exactly 1 face within the image, and the subject isn't wearing glasses, within a certain degree of confidence.
 func validateImage(faceDetails []types.FaceDetail) error {
 	facesDetected := len(faceDetails)
 
