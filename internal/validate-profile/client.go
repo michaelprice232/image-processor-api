@@ -17,10 +17,9 @@ type Client struct {
 	failedKafkaTopic  string
 }
 
-func NewClient(successTopic, failedTopic string) (*Client, error) {
-	// todo: read Kafka properties from envars
+func NewClient(successTopic, failedTopic, bootstrapServers string) (*Client, error) {
 	kafkaConfigMap := kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
+		"bootstrap.servers": bootstrapServers,
 	}
 	kafkaProducer, err := kafka.NewProducer(&kafkaConfigMap)
 	if err != nil {

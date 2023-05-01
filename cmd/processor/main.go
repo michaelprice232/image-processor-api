@@ -20,7 +20,7 @@ const (
 func main() {
 	setLogLevel()
 
-	client, err := validate_profile.NewClient(successKafkaTopic, failedKafkaTopic)
+	client, err := validate_profile.NewClient(successKafkaTopic, failedKafkaTopic, getStringEnvar("kafka-bootstrap-servers"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,8 +30,14 @@ func main() {
 		r.Use(middleware.Logger)
 	}
 	r.Use(middleware.Recoverer)
+
 	r.Get("/health", client.HealthEndpoint)
-	r.Post("/validate", client.ProcessHTTPRequest)
+
+	// Protected routes
+	r.Route("/validate", func(r chi.Router) {
+		r.Use(validate_profile.BearerTokenAuth(getStringEnvar("api-key")))
+		r.Post("/", client.ProcessHTTPRequest)
+	})
 
 	log.Infof("Starting server on port: %s", httpServerPort)
 	log.Fatal(http.ListenAndServe(httpServerPort, r))
@@ -44,4 +50,12 @@ func setLogLevel() {
 		log.SetLevel(log.ErrorLevel)
 	}
 	log.SetLevel(level)
+}
+
+func getStringEnvar(key string) string {
+	envar := os.Getenv(key)
+	if len(envar) == 0 {
+		log.Fatalf("unable to load envar: %v", key)
+	}
+	return envar
 }
