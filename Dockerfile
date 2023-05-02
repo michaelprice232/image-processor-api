@@ -7,9 +7,9 @@ RUN go mod download && go mod verify
 
 COPY . .
 
-RUN CGO_ENABLED=1 go build -v -o /usr/local/bin/image-processor-api ./cmd/processor/main.go
+RUN go build -ldflags="-w -s" -o image-processor-api ./cmd/processor/main.go
 
 
-FROM scratch
-COPY --from=builder /usr/local/bin/image-processor-api /image-processor-api
+FROM gcr.io/distroless/base
+COPY --from=builder /usr/src/app/image-processor-api /image-processor-api
 ENTRYPOINT ["/image-processor-api"]
